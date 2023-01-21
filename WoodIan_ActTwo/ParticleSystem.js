@@ -88,9 +88,9 @@ class ParticleSystem {
             case SOLVER_TYPE.REVERSE_TIME:
                 for (let i = 0; i < this.numParticles; i++) {
                     this.s2[i].vz -= 9.8 * this.timeStep;
-                    this.s2[i].vx *= 0.93;
-                    this.s2[i].vy *= 0.93;
-                    this.s2[i].vz *= 0.93;
+                    this.s2[i].vx *= 0.98;
+                    this.s2[i].vy *= 0.98;
+                    this.s2[i].vz *= 0.98;
                     this.s2[i].x  += this.s2[i].vx * this.timeStep;
                     this.s2[i].y  += this.s2[i].vy * this.timeStep;
                     this.s2[i].z  += this.s2[i].vz * this.timeStep;
