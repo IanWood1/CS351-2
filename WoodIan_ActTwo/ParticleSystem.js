@@ -4,6 +4,11 @@ const PARTICLE_TYPE = {
     // ...
 };
 
+const SOLVER_TYPE = {
+    EULER: 1,
+    REVERSE_TIME: 2,
+}
+
 
 
 class ParticleSystem {
@@ -31,7 +36,13 @@ class ParticleSystem {
                     var x = Math.random() * 2 - 1;
                     var y = Math.random() * 2 - 1;
                     var z = Math.random() * 2;
-                    let p = new Particle(x, y, z, 0, 0, 0, 1);
+
+                    // random velocity
+                    var vx = Math.random() * 10 - 1;
+                    var vy = Math.random() * 10 - 1;
+                    var vz = Math.random() * 10 - 1;
+
+                    let p = new Particle(x, y, z, vx, vy, vz, 1);
                     this.s1.push(p);
                 }
                 this.s2 = this.s1.slice(0);
@@ -59,9 +70,9 @@ class ParticleSystem {
 
     }
 
-    dotFinder(){
-        for (let i = 0; i < this.numParticles; i++) {
-            let p = this.s1[i];
+    dotFinder(state){
+        for (let i = 0; i < state.length; i++) {
+            let p = state[i];
             let dp = new Particle(
                 p.vx, p.vy, p.vz,
                 p.fx / p.mass, p.fy / p.mass, p.fz / p.mass,
@@ -71,18 +82,33 @@ class ParticleSystem {
 
     }
 
-    solver(){
+    solver(solverType){
         // 'reverse time' solver
-        for (let i = 0; i < this.numParticles; i++) {
-            this.s2[i].x = this.s1[i].x + this.sdot[i].x * this.timeStep;
-            this.s2[i].y = this.s1[i].y + this.sdot[i].y * this.timeStep;
-            this.s2[i].z = this.s1[i].z + this.sdot[i].z * this.timeStep;
-            this.s2[i].vx = this.s1[i].vx + this.sdot[i].vx * this.timeStep;
-            this.s2[i].vy = this.s1[i].vy + this.sdot[i].vy * this.timeStep;
-            this.s2[i].vz = this.s1[i].vz + this.sdot[i].vz * this.timeStep;
+        switch(solverType){
+            case SOLVER_TYPE.REVERSE_TIME:
+                for (let i = 0; i < this.numParticles; i++) {
+                    this.s2[i].vz -= 9.8 * this.timeStep;
+                    this.s2[i].vx *= 0.99;
+                    this.s2[i].vy *= 0.99;
+                    this.s2[i].vz *= 0.99;
+                    this.s2[i].x  += this.s2[i].vx * this.timeStep;
+                    this.s2[i].y  += this.s2[i].vy * this.timeStep;
+                    this.s2[i].z  += this.s2[i].vz * this.timeStep;
+                }
+                break;
+                
+            case SOLVER_TYPE.EULER:
+                for (let i = 0; i < this.numParticles; i++) {
+                    this.s2[i].x  = this.s1[i].x  + this.sdot[i].x  * this.timeStep;
+                    this.s2[i].y  = this.s1[i].y  + this.sdot[i].y  * this.timeStep;
+                    this.s2[i].z  = this.s1[i].z  + this.sdot[i].z  * this.timeStep;
+                    this.s2[i].vx = this.s1[i].vx + this.sdot[i].vx * this.timeStep;
+                    this.s2[i].vy = this.s1[i].vy + this.sdot[i].vy * this.timeStep;
+                    this.s2[i].vz = this.s1[i].vz + this.sdot[i].vz * this.timeStep;
+                }
+                break;
 
         }
-
     }
 
     doConstraints(){
@@ -97,12 +123,11 @@ class ParticleSystem {
 
     step(){
         this.applyForces();
-        this.dotFinder();
-        this.solver();
+        this.dotFinder(this.s1);
+        this.solver(SOLVER_TYPE.REVERSE_TIME);
         this.doConstraints();
+
         this.s1 = this.s2.slice(0);
-        // console.log(this.s1[0].z)
-        // console.log(this.s1[0].vz)
 
     }
 

@@ -164,7 +164,7 @@ var xMclik=0.0;			// last mouse button-down position (in CVV coords)
 var yMclik=0.0;   
 var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var yMdragTot=0.0;  
-var particles = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 10);
+var particles = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
 var s1 =  particles.getCurrentStateArray();
 
 var mvpMat = new Matrix4();
@@ -509,7 +509,6 @@ function initVertexBuffers(gl) {
  for(i = 0; i < floorVerts.length; i++){
 	 myVerts[i+s1.length+boxVerts.length] = floorVerts[i];
 }
-console.log(myVerts)
 
   gl.bufferData(gl.ARRAY_BUFFER, myVerts, gl.DYNAMIC_DRAW);
 
@@ -770,7 +769,7 @@ function myKeyPress(ev) {
 		  myRunMode = 0;			// RESET!
 			xposNow =  0.0;				yposNow =  0.0;				zposNow =  1.0;	
 			xvelNow =  INIT_VEL;	yvelNow =  INIT_VEL;	zvelNow =  0.0;
-			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 10);
+			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
 			break;
 		case 'r':		// 'SOFT' reset: boost velocity only.
 			// don't change myRunMode
@@ -778,7 +777,7 @@ function myKeyPress(ev) {
 			if(xvelNow > 0.0) xvelNow += INIT_VEL + randomVel; else xvelNow -= INIT_VEL + randomVel;
 			if(yvelNow > 0.0) yvelNow += INIT_VEL+ randomVel; else yvelNow -= INIT_VEL + randomVel;
 			if(zvelNow > 0.0) zvelNow += INIT_VEL + randomVel; else zvelNow -= INIT_VEL + randomVel;
-			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 10);
+			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
 			break;	
 		case 'p':
 		case 'P':			// toggle pause/run:
@@ -858,8 +857,8 @@ function moveEyeRight(direction){
 // create Float32Array that contains the grid/floor
 // funciton from starter code
 function get_floor(){
-	var xcount = 200;			// # of lines to draw in x,y to make the grid.
-	var ycount = 200;		
+	var xcount = 50;			// # of lines to draw in x,y to make the grid.
+	var ycount = 50;		
 	var xymax	= 50.0;			// grid size; extends to cover +/-xymax in x and y.
  	var xColr = new Float32Array([.2, .7, .2]);	
  	var yColr = new Float32Array([0.3, .8, 0.3]);
