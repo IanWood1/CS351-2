@@ -164,7 +164,7 @@ var xMclik=0.0;			// last mouse button-down position (in CVV coords)
 var yMclik=0.0;   
 var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var yMdragTot=0.0;  
-var particles = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
+var particles = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 30000);
 var s1 =  particles.getCurrentStateArray();
 
 var mvpMat = new Matrix4();
@@ -509,6 +509,8 @@ function initVertexBuffers(gl) {
  for(i = 0; i < floorVerts.length; i++){
 	 myVerts[i+s1.length+boxVerts.length] = floorVerts[i];
 }
+
+console.log("total vert size: " + (s1.length + boxVerts.length + floorVerts.length + s1.length))
 
   gl.bufferData(gl.ARRAY_BUFFER, myVerts, gl.DYNAMIC_DRAW);
 
