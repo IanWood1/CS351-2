@@ -1,5 +1,5 @@
 class Constraint {
-    applyConstraint(particle) {
+    applyConstraint(particles) {
     }
 };
 
@@ -10,7 +10,7 @@ class BoxConstraint{
 
 
 
-    applyConstraint(particle){
+    applyConstraintHelper(particle){
         if(particle.x < -1 && particle.vx < 0){
             particle.vx = -particle.vx;
             particle.x = -1;
@@ -35,14 +35,48 @@ class BoxConstraint{
             particle.vz = -particle.vz;
             particle.z = 2;
         }
+    }
+
+    applyConstraint(particles){
+        for (let particle of particles) {
+            this.applyConstraintHelper(particle);
         }
+    }
 }
 
 class AboveGroundConstraint{
-    applyConstraint(particle){
+    applyConstraintHelper(particle){
         if(particle.z < 0 && particle.vz < 0){
             particle.vz = -particle.vz;
             particle.z = 0;
+        }
+    }
+
+    applyConstraint(particles){
+        for (let particle of particles) {
+            this.applyConstraintHelper(particle);
+        }
+    }
+
+}
+
+
+class FixedPointsConstraint{
+    constructor(particles, fixedPoints){
+        this.fixedParticles = JSON.parse(JSON.stringify(particles));
+        this.fixedPoints = fixedPoints;
+    }
+
+    applyConstraint(particles){
+        for (let i = 0; i < this.fixedParticles.length; i++) {
+            if (this.fixedPoints.includes(i)){
+                particles[i].x = this.fixedParticles[i].x;
+                particles[i].y = this.fixedParticles[i].y;
+                particles[i].z = this.fixedParticles[i].z;
+                particles[i].vx = 0;
+                particles[i].vy = 0;
+                particles[i].vz = 0;
+            }
         }
     }
 }

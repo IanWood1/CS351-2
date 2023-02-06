@@ -164,10 +164,12 @@ var xMclik=0.0;			// last mouse button-down position (in CVV coords)
 var yMclik=0.0;   
 var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var yMdragTot=0.0;  
-var particles = new ParticleSystem(PARTICLE_TYPE.FULLY_CONNECTED_SPRING, 4);
-var particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
-var s1 =  particles.getCurrentStateArray();
-var s2 =  particles2.getCurrentStateArray();
+var g_num_cloth_particles = 400;
+var particles;
+var particles2;
+var s1;
+var s2;
+var linesVerts;
 
 var mvpMat = new Matrix4();
 var u_mvpMat_loc;
@@ -175,10 +177,12 @@ var myIsBall;
 
 //var g_EyeX = 0.0; var g_EyeY = 0.0; var g_EyeZ = 1.0;        // eye position
 //var g_LookX = 0.0; var g_LookY = 0.0; var g_LookZ = 0.0;
-var g_eye = [4,4,3/3/2];
-var g_theta = 3.14 + 3.14/4;
+var g_eye = [2, 20,2];
+var g_theta = 3.14 + 3.14/2;
 var g_tilt = 0;
 var g_up = [0,0,1];
+
+var linesBox;
 
 
 
@@ -202,6 +206,10 @@ function main() {
 	// Or this way:
 	//
 	gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});
+	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl);
+	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 600, gl);
+	s1 =  particles.getCurrentStateArray();
+	s2 =  particles2.getCurrentStateArray();
 	//
 	// NOTE: this disables HTML-5's default screen-clearing, so that our draw() 
 	// function will over-write previous on-screen results until we call the 
@@ -256,29 +264,10 @@ function main() {
     return;
   }
   gl.clearColor(135/255, 206/255, 250/255, 1);	  // RGBA color for clearing <canvas>
-  
+  gl.enable(gl.DEPTH_TEST); // Enable depth test 
   // Get graphics system storage location of uniforms our shaders use:
   // (why? see  http://www.opengl.org/wiki/Uniform_(GLSL) )
-  u_runModeID = gl.getUniformLocation(gl.program, 'u_runMode');
-  if(!u_runModeID) {
-  	console.log('Failed to get u_runMode variable location');
-  	return;
-  }
-	gl.uniform1i(u_runModeID, myRunMode);		// keyboard callbacks set 'myRunMode'
-
-  u_isBallLoc = gl.getUniformLocation(gl.program, 'u_isBall');
-  if(!u_isBallLoc) {
-  	console.log('Failed to get u_isBallLoc variable location');
-  	return;
-  }
-	gl.uniform1i(u_isBallLoc, myIsBall);		// keyboard callbacks set 'myRunMode'
-
-   u_mvpMat_loc = gl.getUniformLocation(gl.program, 'u_mvpMat');
-
-   if(!u_mvpMat_loc) {
-		console.log('Failed to get u_ModelMatrix variable location');
-	return;
-   }
+  
 
 	
   // Quick tutorial on synchronous, real-time animation in JavaScript/HTML-5: 
@@ -320,6 +309,7 @@ function draw(gl, n, timeStep) {
  
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
   
 	
 																					// update particle system state?
@@ -329,7 +319,6 @@ function draw(gl, n, timeStep) {
 		particles2.step();
 	}
 
-	gl.uniform1i(u_runModeID, myRunMode);		// run/step/pause the particle system
 
 	// Assign value to mvpMatrix
 	mvpMat.setIdentity();
@@ -348,7 +337,6 @@ function draw(gl, n, timeStep) {
 	mvpMat.lookAt( g_eye[0], g_eye[1], g_eye[2],
 		g_eye[0]+Math.cos(g_theta), g_eye[1]+Math.sin(g_theta), g_eye[2]+g_tilt,
 		g_up[0], g_up[1],g_up[2]);
-	gl.uniformMatrix4fv(u_mvpMat_loc, false, mvpMat.elements);
 
 	s1 = particles.getCurrentStateArray();
 	s2 = particles2.getCurrentStateArray();
@@ -356,22 +344,17 @@ function draw(gl, n, timeStep) {
 
   // Set myIsBall to 1 to draw POINTS primitive
   myIsBall = 1;
-  gl.uniform1i(u_isBallLoc, myIsBall);		// keyboard callbacks set 'myRunMode'
   // Draw our VBO's contents:
   // -----------------------
-  particles.render(gl);
-  particles2.render(gl);
-  
+  particles.render(gl, mvpMat);
+  particles2.render(gl, mvpMat);
+  linesBox.switchToMe(gl);
+  linesBox.reload(gl, linesVerts, mvpMat);
+  linesBox.draw(gl);
   // Set myIsBall to 0 to draw other primitives
-  myIsBall = 0;
-  gl.uniform1i(u_isBallLoc, myIsBall);		// keyboard callbacks set 'myRunMode'
-  FSIZE = s1.BYTES_PER_ELEMENT; // # bytes per floating-point value (global!)
-  gl.drawArrays(gl.LINES,  s1.length/4 + s2.length/4, 24 + g_numfloorverts);
 
 		
   // Report mouse-drag totals.
-	document.getElementById('MouseResult0').innerHTML=
-			'Mouse Drag totals (CVV coords):\t'+xMdragTot+', \t'+yMdragTot;	
 }
 
 function initVertexBuffers(gl) {
@@ -437,50 +420,22 @@ function initVertexBuffers(gl) {
 
 // Calculate the size of vertex array buffer
  var floorVerts = get_floor()
- var vertSize = s1.length + boxVerts.length + floorVerts.length + s2.length;
+ var vertSize = boxVerts.length + floorVerts.length;
 
  g_numfloorverts = floorVerts.length/4;
- var myVerts = new Float32Array(vertSize);
-
- for (i = 0; i < s1.length; i++){
-	 myVerts[i] = s1[i];
- }
-
- for (i = 0; i < s2.length; i++){
-	 myVerts[i+s1.length] = s2[i];
- }
+ linesVerts = new Float32Array(vertSize);
 
  for(i = 0; i < boxVerts.length; i++){
-	 myVerts[i+s1.length + s2.length] = boxVerts[i];
+	linesVerts[i] = boxVerts[i];
  }
 
  for(i = 0; i < floorVerts.length; i++){
-	 myVerts[i+s1.length+boxVerts.length + s2.length] = floorVerts[i];
+	linesVerts[i+boxVerts.length] = floorVerts[i];
 }
 
+linesBox = new LinesVBO(gl, linesVerts);
 
-  gl.bufferData(gl.ARRAY_BUFFER, myVerts, gl.DYNAMIC_DRAW);
 
-  // Get the ID# for the a_Position variable in the graphics hardware
-  var a_PositionID = gl.getAttribLocation(gl.program, 'a_Position');
-  if(a_PositionID < 0) {
-    console.log('Failed to get the storage location of a_Position');
-    return -1;
-  }
-  // Tell GLSL to fill the 'a_Position' attribute variable for each shader 
-  // with values from the buffer object chosen by 'gl.bindBuffer()' command.
-	// websearch yields OpenGL version: 
-	//		http://www.opengl.org/sdk/docs/man/xhtml/glVertexAttribPointer.xml
-  gl.vertexAttribPointer(a_PositionID, 
-                          4,  // # of values in this attrib (1,2,3,4) 
-                          gl.FLOAT, // data type (usually gl.FLOAT)
-                          false,    // use integer normalizing? (usually false)
-                          4*FSIZE,  // Stride: #bytes from 1st stored value to next 
-                          0*FSIZE); // Offset; #bytes from start of buffer to 
-                                    // 1st stored attrib value we will actually use.
-  // Enable this assignment of the bound buffer to the a_Position variable:
-  gl.enableVertexAttribArray(a_PositionID);
-  return vcount;
 }
 
 //===================Mouse and Keyboard event-handling Callbacks================
@@ -508,8 +463,6 @@ function myMouseDown(ev, gl, canvas) {
 	isDrag = true;											// set our mouse-dragging flag
 	xMclik = x;													// record where mouse-dragging began
 	yMclik = y;
-		document.getElementById('MouseResult1').innerHTML = 
-	'myMouseDown() at CVV coords x,y = '+x+', '+y+'<br>';
 };
 
 
@@ -612,10 +565,10 @@ function myKeyDown(ev) {
 		moveEyeRight(-1);
 	}
 	if (ev.code == "E" || ev.code === "PageUp"){
-		g_eye[2] += 0.05
+		g_eye[2] += 0.1
 	}
 	if (ev.code == "KeyQ" || ev.code === "PageDown"){
-		g_eye[2] -= 0.05
+		g_eye[2] -= 0.1
 	}
 //===============================================================================
 // Called when user presses down ANY key on the keyboard, and captures the 
@@ -694,12 +647,7 @@ function myKeyPress(ev) {
 	myChar = String.fromCharCode(ev.keyCode);	//	convert code to character-string
 	// Report EVERYTHING about this pressed key in the webpage 
 	// in the <div> element with id='Result':r 
-  document.getElementById('KeyResult').innerHTML = 
-   			'char= ' 		 	+ myChar 			+ ', keyCode= '+ ev.keyCode 	+ 
-   			', charCode= '+ ev.charCode + ', shift= '	 + ev.shiftKey 	+ 
-   			', ctrl= '		+ ev.shiftKey + ', altKey= ' + ev.altKey 		+ 
-   			', metaKey= '	+ ev.metaKey 	+ '<br>' ;
-  			
+
   // update particle system state? myRunMode 0=reset; 1= pause; 2=step; 3=run
 	switch(myChar) {
 		case '0':	
@@ -715,10 +663,10 @@ function myKeyPress(ev) {
 			myRunMode = 3;
 			break;
 		case 'R':  // HARD reset: position AND velocity.
-		  	particles = new ParticleSystem(PARTICLE_TYPE.FULLY_CONNECTED_SPRING, 4)
+		  	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl)
 			break;
 		case 'r':		// 'SOFT' reset: boost velocity only.
-			particles = new ParticleSystem(PARTICLE_TYPE.FULLY_CONNECTED_SPRING, 4)
+			particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl)
 			break;	
 		case 'p':
 		case 'P':			// toggle pause/run:
@@ -729,10 +677,10 @@ function myKeyPress(ev) {
 			myRunMode = 2;
 			break;
 		case 'e':
-			g_eye[2] += 0.05
+			g_eye[2] += 0.1
 			break
 		case 'q':
-			g_eye[2] -= 0.05
+			g_eye[2] -= 0.1
 			break
 		default:
 			//console.log('myKeyPress(): Ignored key: '+myChar);
@@ -774,7 +722,7 @@ function crossProduct(a, b) {
 
 
   function moveEyeAlongView(direction){
-	var vel = 0.1;
+	var vel = 0.4;
 	var aim = [g_eye[0]+Math.cos(g_theta), g_eye[1]+Math.sin(g_theta), g_eye[2]+g_tilt]
 	var dir = [aim[0]-g_eye[0], aim[1]-g_eye[1], aim[2]-g_eye[2]];
 	g_eye[0] = g_eye[0] + dir[0] * direction * vel
@@ -787,7 +735,7 @@ function moveEyeRight(direction){
 	var right_array = subtract([g_eye[0]+Math.cos(g_theta), g_eye[1]+Math.sin(g_theta), g_eye[2]+g_tilt], g_eye)
 	right_array = crossProduct(right_array, g_up);
 	right_array = normalize(right_array);
-	var vel = 0.1;
+	var vel = 0.4;
 	for (var i = 0; i < 3; i++){
 	g_eye[i] += right_array[i] * vel * direction
 	}

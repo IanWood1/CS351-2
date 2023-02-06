@@ -78,3 +78,101 @@ class ForceFullyConnectedSpring extends Force {
     }
 
 }
+
+
+class SelectiveSpringForce extends Force {
+    constructor(k, d, length, connectedIndexes) {
+        super();
+        this.k = k;
+        this.d = d;
+        this.length = length;
+        this.connectedIndexes = connectedIndexes;
+        this.force = new ForceFullyConnectedSpring(k, d, length);
+    }
+
+    applyForce(particles) {
+        for (let i = 0; i < this.connectedIndexes.length; i++) {
+            let index1 = this.connectedIndexes[i][0];
+            let index2 = this.connectedIndexes[i][1];
+            let particle1 = particles[index1];
+            let particle2 = particles[index2];
+            this.force.applyForce([particle1, particle2]);
+        }
+    }
+}
+
+
+
+
+
+
+
+class FountainForce extends Force {
+    constructor(centerx, centery, strength) {
+        super();
+        this.centerx = centerx;
+        this.centery = centery;
+        this.strength = strength;
+    }
+
+    applyForce(particles) {
+        for (let particle of particles) {
+            let x = particle.x - this.centerx;
+            let y = particle.y - this.centery;
+            let distance = Math.sqrt(x*x + y*y);
+            let force = this.strength / distance;
+            let fz = force / particle.mass;
+            particle.fz += fz;
+
+            // apply slight random force in x and y direction
+            let fx = (Math.random() - 0.5) * 10
+            let fy = (Math.random() - 0.5) * 10
+            particle.fx += fx;
+            particle.fy += fy;
+
+        }
+    }
+    
+}
+
+
+class ConstantDirectionForce extends Force {
+    constructor(x, y, z, strength) {
+        super();
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.strength = strength;
+    }
+
+    applyForce(particles) {
+        for (let particle of particles) {
+            particle.fx += this.x * this.strength;
+            particle.fy += this.y * this.strength;
+            particle.fz += this.z * this.strength;
+        }
+    }
+}
+
+
+class BlowingDirectionForce extends Force {
+    constructor(x, y, z, strength) {
+        super();
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.strength = strength;
+        this.t = 0;
+    }
+
+    applyForce(particles) {
+        // effective strength is a function of time (sinusoidal)
+        this.t += 0.01;
+        let effectiveStrength = this.strength * Math.sin(this.t);
+        for (let particle of particles) {
+            particle.fx += this.x * effectiveStrength;
+            particle.fy += this.y * effectiveStrength;
+            particle.fz += this.z * effectiveStrength;
+        }
+    }
+}
