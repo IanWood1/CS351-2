@@ -259,7 +259,7 @@ pushMatrix(g_modelMatrix);
   //gl.drawArrays(gl.TRIANGLES, 0, sphereVerts);
 g_modelMatrix = popMatrix(g_modelMatrix);
 
-matl0.setMatl(MATL_SILVER_SHINY)
+matl0.setMatl(MATL_EMERALD)
 matl1.setMatl(MATL_BLU_PLASTIC)
 sendStructs(vbobox)
 pushMatrix(g_modelMatrix);

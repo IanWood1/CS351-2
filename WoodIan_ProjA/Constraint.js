@@ -89,6 +89,10 @@ class SphereConstraint{
     }
 
     applyConstraint(particles){
+        this.x = g_spherex;
+        this.y = g_spherey;
+        this.z = g_spherez;
+        this.radius = g_spherer;
         for (let particle of particles) {
             let dx = particle.x - this.x;
             let dy = particle.y - this.y;
@@ -103,9 +107,17 @@ class SphereConstraint{
                 particle.x = this.x + dx * scale;
                 particle.y = this.y + dy * scale;
                 particle.z = this.z + dz * scale;
-                particle.vx = -particle.vx;
-                particle.vy = -particle.vy;
-                particle.vz = -particle.vz;
+                
+                let toCenterx = this.x - particle.x;
+                let toCentery = this.y - particle.y;
+                let toCenterz = this.z - particle.z;
+
+                // project the velocity onto the vector from the particle to the center of the sphere
+                let dot = particle.vx * toCenterx + particle.vy * toCentery + particle.vz * toCenterz;
+                particle.vx = particle.vx - dot * 2* toCenterx;
+                particle.vy = particle.vy - dot *2* toCentery;
+                particle.vz = particle.vz - dot *2* toCenterz;
+
             }
         }
     }
@@ -113,11 +125,13 @@ class SphereConstraint{
 }
 
 class FireConstraint{
-    constructor(x, y, z, lifespan){
+    constructor(x, y, z, lifespan, vx){
         this.x = x;
         this.y = y;
         this.z = z;
+        this.r = 0.3;
         this.lifespan = lifespan;
+        this.vx = vx
     }
 
 
@@ -125,10 +139,11 @@ class FireConstraint{
         for (let particle of particles) {
             particle.age += 1;
             if (particle.age > this.lifespan){
-                particle.x = this.x;
-                particle.y = this.y;
+                // particle.x and particle.y are within the circle
+                particle.x = this.x + (Math.random() * 4 - 1) * this.r;
+                particle.y = this.y + (Math.random() * 4 - 1) * this.r;
                 particle.z = this.z;
-                particle.vz = Math.random() * 2 + 4;
+                particle.vz = Math.random() * this.vx + 2;
                 particle.age = Math.floor(Math.random() * this.lifespan);
                 particle.vx = Math.random() * 1 - 0.5;
                 particle.vy = Math.random() * 1 - 0.5;

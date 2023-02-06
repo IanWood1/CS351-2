@@ -14,6 +14,8 @@ const SOLVER_TYPE = {
     MIDPOINT: 4,
 }
 
+var g_max_age;
+
 
 
 
@@ -96,7 +98,7 @@ class ParticleSystem {
                 let spacing = 0.1;
                 let startX = -spacing * (numParticlesPerSide - 1) / 2 + 4;
                 let startZ = -spacing * (numParticlesPerSide - 1) / 2 + 5;
-                let startY = 0;
+                let startY = 0.5;
                 let connections = [];
                 let diaganolConnections = [];
                 let fixedPoints = [];
@@ -106,7 +108,7 @@ class ParticleSystem {
                 for (let i = 0; i < numParticlesPerSide; i++) {
                     for (let j = 0; j < numParticlesPerSide; j++) {
                         let x = startX + spacing * i * 1.2;
-                        let y = startY;
+                        let y = startY - spacing * j;
                         let z = startZ + spacing * j * 0.1;
                         let vxRand = 0
                         let vyRand = 0
@@ -145,7 +147,7 @@ class ParticleSystem {
                     }
                 }
                 this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
-                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([153/225, 50/225, 204/225, 1]));
+                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([100/225, 10/225, 10/225, 1]));
                 this.s2 = this.s1.slice(0);
                 this.spring2 = new SelectiveSpringForce(100, 0.1, spacing * Math.sqrt(2), diaganolConnections);
                 this.spring = new SelectiveSpringForce(3000, 1, spacing, connections);
@@ -164,6 +166,7 @@ class ParticleSystem {
 
                 this.spawnX = -4;
                 this.spawnY = 0;
+                let initialVelocity = 10;
 
                 for (let i = 0; i < this.numParticles; i++) {
                     let x = this.spawnX;
@@ -171,15 +174,16 @@ class ParticleSystem {
                     let z = 0;
                     let vxRand = Math.random() * 2 - 1;
                     let vyRand = Math.random() * 2 - 1;
-                    let vzRand = 4;
+                    let vzRand = Math.random() * initialVelocity;
                     let p = new Particle(x, y, z, vxRand, vyRand, vzRand, 1);
                     p.age = Math.floor(Math.random() * 60);
                     this.s1.push(p);
                 }
-                this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
+                this.BOX = new FireVBO(gl, this.getCurrentStateArrayFire());
                 this.s2 = this.s1.slice(0);
-                this.constraintList = [new AboveGroundConstraint(), new FireConstraint(this.spawnX, this.spawnY, 0, 60)];
-                this.forceList = [];
+                g_max_age =40;
+                this.constraintList = [new AboveGroundConstraint(), new FireConstraint(this.spawnX, this.spawnY, 0, g_max_age, initialVelocity)];
+                this.forceList = [new ForceDrag(), new ForceGravity()];
                 break;
 
 
@@ -342,6 +346,23 @@ class ParticleSystem {
         return stateArray;
     }
 
+    getCurrentStateArrayFire(){
+        this.elementsPerParticle = 7;
+        var stateArray = new Float32Array(this.numParticles * 8);
+        for (let i = 0; i < this.numParticles; i++) {
+            let p = this.s1[i];
+            stateArray[i * this.elementsPerParticle] = p.x;
+            stateArray[i * this.elementsPerParticle + 1] = p.y;
+            stateArray[i * this.elementsPerParticle + 2] = p.z;
+            stateArray[i * this.elementsPerParticle + 3] = 1;
+            stateArray[i * this.elementsPerParticle + 4] = (g_max_age - p.age)/g_max_age * 3.5;
+            stateArray[i * this.elementsPerParticle + 5] = 0;
+            stateArray[i * this.elementsPerParticle + 6] = 0;
+        }
+        return stateArray;
+
+    }
+
 
     render(gl, mvpMat){
         // var s1arry = this.getCurrentStateArray();
@@ -357,6 +378,13 @@ class ParticleSystem {
             this.LinesBOX.switchToMe(gl);
             this.LinesBOX.reload(gl, this.getClothLines(), mvpMat);
             this.LinesBOX.draw(gl);
+            return;
+        }
+
+        if (this.particalType == PARTICLE_TYPE.FIRE){
+            this.BOX.switchToMe(gl);
+            this.BOX.reload(gl, this.getCurrentStateArrayFire(), mvpMat);
+            this.BOX.draw(gl);
             return;
         }
 

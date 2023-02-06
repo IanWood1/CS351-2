@@ -5,9 +5,9 @@
 //
 g_numfloorverts = 0;
 g_spherex = 4;
-g_spherey = -0.5;
-g_spherez = 3;
-g_spherer = 1;
+g_spherey = -0.2;
+g_spherez = 1;
+g_spherer = 0.8;
 
 
 var g_lightDir = [0,0,5];
@@ -235,7 +235,7 @@ function main() {
 	gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});
 	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl);
 	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 1000, gl);
-	fire = new ParticleSystem(PARTICLE_TYPE.FIRE, 600, gl);
+	fire = new ParticleSystem(PARTICLE_TYPE.FIRE, 3000, gl);
 	s1 =  particles.getCurrentStateArray();
 	s2 =  particles2.getCurrentStateArray();
 	SphereBox.init(gl);
@@ -601,10 +601,16 @@ function myKeyDown(ev) {
 		moveEyeAlongView(-1)
 	}
 	if(ev.code == "ArrowDown"){
-		g_spherey -= 0.1
+		g_spherey += 0.1
 	}
 	if(ev.code == "ArrowUp"){
-		g_spherey += 0.1
+		g_spherey -= 0.1
+	}
+	if (ev.code == "ArrowLeft"){
+		g_spherex += 0.1
+	}
+	if (ev.code == "ArrowRight"){
+		g_spherex -= 0.1
 	}
 	if(ev.code == "KeyD" || ev.code == "Right"){
 		moveEyeRight(1);
