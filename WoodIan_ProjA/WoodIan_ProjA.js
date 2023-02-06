@@ -8,6 +8,7 @@ g_spherex = 4;
 g_spherey = -0.2;
 g_spherez = 1;
 g_spherer = 0.8;
+g_solverType = SOLVER_TYPE.MIDPOINT;
 
 
 var g_lightDir = [0,0,5];
@@ -220,6 +221,23 @@ function main() {
   // Retrieve <canvas> element
   var canvas = document.getElementById('webgl');
 
+  // find "solver" drop-down list in our webpage:
+  var solver = document.getElementById('solver');
+  // fill it with our choice from SOLVER_TYPE enum
+  for (var type in SOLVER_TYPE) {
+	var opt = document.createElement('option');
+	opt.value = type
+	opt.innerHTML = type;
+	solver.appendChild(opt);
+  }
+  solver.value = SOLVER_TYPE.VELOCITY_VERLET;
+
+  // set handler for 'solver' drop-down list:
+  solver.onchange = function() {
+	g_solverType = solver.value;
+  }
+	
+
   // Get the rendering context for WebGL
 	// You can do it this way:
 	//	(textbooks' method found in cuon-utils.js; sets up debugging by default)
@@ -278,7 +296,8 @@ function main() {
   //  		modifiers such as shift, alt, or ctrl.  I find these most useful for
   //			single-number and single-letter inputs that include SHIFT,CTRL,ALT.
 	// END Mouse & Keyboard Event-Handlers-----------------------------------
-	
+  
+  
   // Initialize shaders
   if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
     console.log('Failed to intialize shaders.');

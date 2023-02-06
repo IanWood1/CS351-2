@@ -8,10 +8,9 @@ const PARTICLE_TYPE = {
 };
 
 const SOLVER_TYPE = {
-    EULER: 1,
-    REVERSE_TIME: 2,
-    VELOCITY_VERLET: 3,
-    MIDPOINT: 4,
+    EULER: "EULER",
+    VELOCITY_VERLET: "VELOCITY_VERLET",
+    MIDPOINT: "MIDPOINT",
 }
 
 var g_max_age;
@@ -149,8 +148,8 @@ class ParticleSystem {
                 this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
                 this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([100/225, 10/225, 10/225, 1]));
                 this.s2 = this.s1.slice(0);
-                this.spring2 = new SelectiveSpringForce(100, 0.1, spacing * Math.sqrt(2), diaganolConnections);
-                this.spring = new SelectiveSpringForce(3000, 1, spacing, connections);
+                this.spring2 = new SelectiveSpringForce(100, 10, spacing * Math.sqrt(2), diaganolConnections);
+                this.spring = new SelectiveSpringForce(1000, 10, spacing, connections);
                 this.forceList = [ this.spring, this.spring2, new ForceDrag(), new ForceGravity()];
                 this.constraintList = [new AboveGroundConstraint(), 
                     new FixedPointsConstraint(this.s1, fixedPoints),
@@ -311,7 +310,7 @@ class ParticleSystem {
 
 
             default:
-                throw new Error("Unknown solver type");
+                throw new Error("Unknown solver type: " + solverType);
                 break;
 
         }
@@ -326,7 +325,7 @@ class ParticleSystem {
 
 
     step(){
-        this.solver(SOLVER_TYPE.VELOCITY_VERLET);
+        this.solver(g_solverType);
         this.doConstraints();
 
         this.s1 = this.s2.slice(0);
