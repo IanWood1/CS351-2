@@ -90,16 +90,49 @@ class SphereConstraint{
 
     applyConstraint(particles){
         for (let particle of particles) {
-            let x = particle.x - this.x;
-            let y = particle.y - this.y;
-            let z = particle.z - this.z;
-            let distance = Math.sqrt(x*x + y*y + z*z);
-            if (distance > this.radius){
-                particle.x = this.x + x * this.radius / distance;
-                particle.y = this.y + y * this.radius / distance;
-                particle.z = this.z + z * this.radius / distance;
+            let dx = particle.x - this.x;
+            let dy = particle.y - this.y;
+            let dz = particle.z - this.z;
+            let distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+            // if the particle is inside the sphere
+            // set the particle to the surface of the sphere
+            // and reverse the velocity 
+            if (distance < this.radius){
+                let scale = this.radius / distance;
+                particle.x = this.x + dx * scale;
+                particle.y = this.y + dy * scale;
+                particle.z = this.z + dz * scale;
+                particle.vx = -particle.vx;
+                particle.vy = -particle.vy;
+                particle.vz = -particle.vz;
             }
         }
     }
 
+}
+
+class FireConstraint{
+    constructor(x, y, z, lifespan){
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.lifespan = lifespan;
+    }
+
+
+    applyConstraint(particles){
+        for (let particle of particles) {
+            particle.age += 1;
+            if (particle.age > this.lifespan){
+                particle.x = this.x;
+                particle.y = this.y;
+                particle.z = this.z;
+                particle.vz = Math.random() * 2 + 4;
+                particle.age = Math.floor(Math.random() * this.lifespan);
+                particle.vx = Math.random() * 1 - 0.5;
+                particle.vy = Math.random() * 1 - 0.5;
+            }
+        }
+    }
 }

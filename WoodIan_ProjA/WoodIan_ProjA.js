@@ -4,6 +4,29 @@
 
 //
 g_numfloorverts = 0;
+g_spherex = 4;
+g_spherey = -0.5;
+g_spherez = 3;
+g_spherer = 1;
+
+
+var g_lightDir = [0,0,5];
+var g_ambient = [0.2,0.2,0.2];
+var g_isBlinn = 1;
+var g_mvpMatrix = new Matrix4();
+var g_worldMat = new Matrix4();
+var g_normalMatrix = new Matrix4();
+var g_modelMatrix = new Matrix4();
+var g_ambient = [1,1,1]
+var g_diffuse = [1,1,1]
+var g_specular = [1,1,1]
+var g_sphere_angle = 0;
+var g_sphere_speed = 0.3;
+var g_wind_speed_default = .5;
+var g_wind_speed = g_wind_speed_default;
+var g_wind_total_movement = 5;
+var g_wind_angle = 0;
+
 // ORIGINAL SOURCE:
 // RotatingTranslatedTriangle.js (c) 2012 matsuda
 // HIGHLY MODIFIED to make:
@@ -167,6 +190,7 @@ var yMdragTot=0.0;
 var g_num_cloth_particles = 400;
 var particles;
 var particles2;
+var fire;
 var s1;
 var s2;
 var linesVerts;
@@ -177,7 +201,7 @@ var myIsBall;
 
 //var g_EyeX = 0.0; var g_EyeY = 0.0; var g_EyeZ = 1.0;        // eye position
 //var g_LookX = 0.0; var g_LookY = 0.0; var g_LookZ = 0.0;
-var g_eye = [2, 20,2];
+var g_eye = [0, 20,2];
 var g_theta = 3.14 + 3.14/2;
 var g_tilt = 0;
 var g_up = [0,0,1];
@@ -185,6 +209,7 @@ var g_up = [0,0,1];
 var linesBox;
 var date = new Date();
 var time = date.getTime();
+var SphereBox = new VBObox2();
 
 
 
@@ -210,8 +235,10 @@ function main() {
 	gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});
 	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl);
 	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 1000, gl);
+	fire = new ParticleSystem(PARTICLE_TYPE.FIRE, 600, gl);
 	s1 =  particles.getCurrentStateArray();
 	s2 =  particles2.getCurrentStateArray();
+	SphereBox.init(gl);
 	//
 	// NOTE: this disables HTML-5's default screen-clearing, so that our draw() 
 	// function will over-write previous on-screen results until we call the 
@@ -304,7 +331,7 @@ function animate(timeStep) {
   g_last = now;
 
  // log the frame-rate to the console as an integer:
- console.log('frame-rate: '+Math.floor(1000/elapsed)+' fps.');
+ //console.log('frame-rate: '+Math.floor(1000/elapsed)+' fps.');
 
 
   // Return the amount of time passed.
@@ -324,6 +351,7 @@ function draw(gl, n, timeStep) {
 		if(myRunMode==2) myRunMode=1;				// (if 2, do just one step and pause.)
 		particles.step();
 		particles2.step();
+		fire.step();
 	}
 
 
@@ -355,9 +383,16 @@ function draw(gl, n, timeStep) {
   // -----------------------
   particles.render(gl, mvpMat);
   particles2.render(gl, mvpMat);
+  fire.render(gl, mvpMat);
   linesBox.switchToMe(gl);
   linesBox.reload(gl, linesVerts, mvpMat);
   linesBox.draw(gl);
+  g_mvpMatrix.set(mvpMat);
+  g_worldMat.set(mvpMat);	
+  g_normalMatrix.setInverseOf(mvpMat);
+  SphereBox.switchToMe();  // Set WebGL to render from this VBObox.
+  SphereBox.adjust();		  // Send new values for uniforms to the GPU, and
+  SphereBox.draw();
   // Set myIsBall to 0 to draw other primitives
 
 		
@@ -559,16 +594,22 @@ function myKeyDown(ev) {
 	g_tilt -= look_sense / 2
 	}
 	
-	if(ev.code == "KeyW" || ev.code == "ArrowUp"){
+	if(ev.code == "KeyW"){
 		moveEyeAlongView(1)
 	}
-	if(ev.code == "KeyS" || ev.code == "ArrowDown"){
+	if(ev.code == "KeyS"){
 		moveEyeAlongView(-1)
+	}
+	if(ev.code == "ArrowDown"){
+		g_spherey -= 0.1
+	}
+	if(ev.code == "ArrowUp"){
+		g_spherey += 0.1
 	}
 	if(ev.code == "KeyD" || ev.code == "Right"){
 		moveEyeRight(1);
 	}
-	if(ev.code == "KeyA" || ev.code == "ArrowLeft"){
+	if(ev.code == "KeyA"){
 		moveEyeRight(-1);
 	}
 	if (ev.code == "E" || ev.code === "PageUp"){

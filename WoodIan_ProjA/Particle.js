@@ -10,5 +10,6 @@ class Particle {
         this.fx = 0;
         this.fy = 0;
         this.fz = 0;
+        this.age = 0;
     }
 }

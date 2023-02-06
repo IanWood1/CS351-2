@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" id="noScroll">
+  <head>
+    <meta charset="utf-8" />
+    <title>Project B</title>
+  </head>
+
+  <!-- HTML was created using starter code provided by Jack Tumblin-->
+  <style>
+    #horizontalDiv{
+      display: flex;
+      flex-direction: row;
+    }
+    #noScroll{
+      height: 100%;
+      overflow: hidden
+    }
+  </style>
+
+
+
+  <body onload="main()", onresize="drawResize()" id="noScroll">
+  
+    <canvas id="webgl" width="600" height="300">
+    Please use a browser that supports "canvas"
+    </canvas>
+    <div id="horizontalDiv">
+      <p>FPS:&nbsp</p>
+      <p id="fps"></p>
+    </div>
+    <div id="horizontalDiv">
+    <div>
+      <b>Use "WASD" to change the camera location and "IJKL" to change look.</b>
+      <br>
+      <br>
+      <b>"Space" will move the camera up and "Shift" will move the camera down.</b>
+      <br>
+      <br>
+      <b>Use your cursor to rotate the box, press "P" to pause</b>
+      <br>
+      <br>
+  
+      <button onclick="togglePhong()">Toggle Shading</button>
+      <button onclick="toggleBlinn()">Toggle Lighting</button>
+      <div id="horizontalDiv">
+        <p>Current Lighting and Shading:&nbsp</p>
+        <p id="LightingAndShading"></p>
+      </div>
+      <div id="horizontalDiv">
+        <p>Current Camera Position:&nbsp</p>
+        <p>X:</p>
+        <input type="range" id="xrange" min="-10" max="10" value="0" step="0.1"></range>
+        <p>Y:</p>
+        <input type="range" id="yrange" min="-10" max="10" value="0" step="0.1"></range>
+        <p>Z:</p>
+        <input type="range" id="zrange" min="-10" max="10" value="5" step="0.1"></range>
+      </div>
+    </div>
+      <div>
+        <div id="horizontalDiv">
+          <p>Light Source Ambient:&nbsp</p>
+          <p>R:</p>
+          <input type="range" id="ambientR" min="0" max="5" value="1" step="0.01"></range>
+          <p>G:</p>
+          <input type="range" id="ambientG" min="0" max="5" value="1" step="0.01"></range>
+          <p>B:</p>
+          <input type="range" id="ambientB" min="0" max="5" value="1" step="0.01"></range>
+        </div>
+        <div id="horizontalDiv">
+          <p>Light Source Diffuse:&nbsp</p>
+          <p>R:</p>
+          <input type="range" id="diffuseR" min="0" max="5" value="1" step="0.01"></range>
+          <p>G:</p>
+          <input type="range" id="diffuseG" min="0" max="5" value="1" step="0.01"></range>
+          <p>B:</p>
+          <input type="range" id="diffuseB" min="0" max="5" value="1" step="0.01"></range>
+        </div>
+        <div id="horizontalDiv">
+          <p>Light Source Specular:&nbsp</p>
+          <p>R:</p>
+          <input type="range" id="specularR" min="0" max="5" value="1" step="0.01"></range>
+          <p>G:</p>
+          <input type="range" id="specularG" min="0" max="5" value="1" step="0.01"></range>
+          <p>B:</p>
+          <input type="range" id="specularB" min="0" max="5" value="1" step="0.01"></range>
+      </div>
+
+    </div>
+
+    
+
+
+
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/cuon-matrix-quat03.js"></script>
+    <script src="lights-JT.js"></script>
+    <script src="materials_Ayerdi04.js"></script>
+	  <script src="JT_VBObox-Lib.js"></script>
+    <script src="IanWood_ProjectC.js"></script>
+  </body>
+</html>

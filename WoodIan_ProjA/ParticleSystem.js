@@ -3,6 +3,7 @@ const PARTICLE_TYPE = {
     MULTI_BOUNCY: 1,
     FULLY_CONNECTED_SPRING: 2,
     CLOTH: 3,
+    FIRE: 4,
     // ...
 };
 
@@ -12,6 +13,7 @@ const SOLVER_TYPE = {
     VELOCITY_VERLET: 3,
     MIDPOINT: 4,
 }
+
 
 
 
@@ -93,7 +95,7 @@ class ParticleSystem {
                 }
                 let spacing = 0.1;
                 let startX = -spacing * (numParticlesPerSide - 1) / 2 + 4;
-                let startZ = -spacing * (numParticlesPerSide - 1) / 2 + 4;
+                let startZ = -spacing * (numParticlesPerSide - 1) / 2 + 5;
                 let startY = 0;
                 let connections = [];
                 let diaganolConnections = [];
@@ -105,7 +107,7 @@ class ParticleSystem {
                     for (let j = 0; j < numParticlesPerSide; j++) {
                         let x = startX + spacing * i * 1.2;
                         let y = startY;
-                        let z = startZ + spacing * j;
+                        let z = startZ + spacing * j * 0.1;
                         let vxRand = 0
                         let vyRand = 0
                         let vzRand = 0
@@ -143,13 +145,43 @@ class ParticleSystem {
                     }
                 }
                 this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
-                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([65/225, 43/225, 21/225, 1]));
+                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([153/225, 50/225, 204/225, 1]));
                 this.s2 = this.s1.slice(0);
                 this.spring2 = new SelectiveSpringForce(100, 0.1, spacing * Math.sqrt(2), diaganolConnections);
                 this.spring = new SelectiveSpringForce(3000, 1, spacing, connections);
                 this.forceList = [ this.spring, this.spring2, new ForceDrag(), new ForceGravity()];
-                this.constraintList = [new AboveGroundConstraint(), new FixedPointsConstraint(this.s1, fixedPoints),];
+                this.constraintList = [new AboveGroundConstraint(), 
+                    new FixedPointsConstraint(this.s1, fixedPoints),
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez)   
+                ];
                 break;
+
+
+            case PARTICLE_TYPE.FIRE:
+                this.particalType = PARTICLE_TYPE.FIRE;
+                this.s1 = [];
+                this.s2 = [];
+
+                this.spawnX = -4;
+                this.spawnY = 0;
+
+                for (let i = 0; i < this.numParticles; i++) {
+                    let x = this.spawnX;
+                    let y = this.spawnY;
+                    let z = 0;
+                    let vxRand = Math.random() * 2 - 1;
+                    let vyRand = Math.random() * 2 - 1;
+                    let vzRand = 4;
+                    let p = new Particle(x, y, z, vxRand, vyRand, vzRand, 1);
+                    p.age = Math.floor(Math.random() * 60);
+                    this.s1.push(p);
+                }
+                this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
+                this.s2 = this.s1.slice(0);
+                this.constraintList = [new AboveGroundConstraint(), new FireConstraint(this.spawnX, this.spawnY, 0, 60)];
+                this.forceList = [];
+                break;
+
 
 
             default:
