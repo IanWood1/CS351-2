@@ -8,8 +8,6 @@ class Constraint {
 // 2x2x2 with the bottom on z = 0 centered at the origin
 class BoxConstraint{
 
-
-
     applyConstraintHelper(particle){
         if(particle.x < -1 && particle.vx < 0){
             particle.vx = -particle.vx;
@@ -79,4 +77,29 @@ class FixedPointsConstraint{
             }
         }
     }
+}
+
+
+class SphereConstraint{
+    constructor(radius, x, y, z){
+        this.radius = radius;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    applyConstraint(particles){
+        for (let particle of particles) {
+            let x = particle.x - this.x;
+            let y = particle.y - this.y;
+            let z = particle.z - this.z;
+            let distance = Math.sqrt(x*x + y*y + z*z);
+            if (distance > this.radius){
+                particle.x = this.x + x * this.radius / distance;
+                particle.y = this.y + y * this.radius / distance;
+                particle.z = this.z + z * this.radius / distance;
+            }
+        }
+    }
+
 }

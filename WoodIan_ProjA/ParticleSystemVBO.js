@@ -22,7 +22,7 @@ class ParticlesVBO {
               v_Color = vec4(1.0, 1.0, 1.0, 1.0); 	// white: 2==step
             } 
             else { 
-              v_Color = vec4(0.0, 0.0, 0.0, 1.0); 	// green: >3==run
+              v_Color = vec4(0.0, 0.0, 0.9, 1.0); 	// green: >3==run
                    } 
         }`;
 

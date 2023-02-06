@@ -62,16 +62,14 @@ class ForceFullyConnectedSpring extends Force {
                 particle1.fz += fz;
 
                 // handle damping
-                let vx_rel = particle1.vx - particle2.vx;
-                let vy_rel = particle1.vy - particle2.vy;
-                let vz_rel = particle1.vz - particle2.vz;
-                let vx_to_particle2 = vx_rel * x / distance;
-                let vy_to_particle2 = vy_rel * y / distance;
-                let vz_to_particle2 = vz_rel * z / distance;
-                let damping = this.d * (vx_to_particle2 + vy_to_particle2 + vz_to_particle2);
-                particle1.fx -= damping * x / particle1.mass;
-                particle1.fy -= damping * y / particle1.mass;
-                particle1.fz -= damping * z / particle1.mass;
+                // project the velocity of particle1 onto the vector from particle1 to particle2
+                let proj = (particle1.vx * x + particle1.vy * y + particle1.vz * z) / (distance * distance);
+                let vxproj = proj * x;
+                let vyproj = proj * y;
+                let vzproj = proj * z;
+                particle1.fx -= this.d * vxproj;
+                particle1.fy -= this.d * vyproj;
+                particle1.fz -= this.d * vzproj;
             }
         }
         
@@ -103,10 +101,6 @@ class SelectiveSpringForce extends Force {
 
 
 
-
-
-
-
 class FountainForce extends Force {
     constructor(centerx, centery, strength) {
         super();
@@ -133,6 +127,56 @@ class FountainForce extends Force {
         }
     }
     
+}
+
+
+class TornadoForce extends Force {
+    constructor(centerx, centery, strength) {
+        super();
+        this.actualCenterx = centerx;
+        this.actualCentery = centery;
+        // center of the tornado is moving in a circle (r=0.5)
+        // around the actual center
+        this.t = 0;
+        this.centerx = Math.sin(this.t) * 0.5 + this.actualCenterx;
+        this.centery = Math.cos(this.t) * 0.5 + this.actualCentery;
+        this.strength = strength;
+    }
+
+    applyForce(particles) {
+        this.t+=0.01;
+        this.centerx = Math.sin(this.t) * 0.5 + this.actualCenterx;
+        this.centery = Math.cos(this.t) * 0.5 + this.actualCentery;
+        for (let particle of particles) {
+            let x = particle.x - this.centerx;
+            let y = particle.y - this.centery;
+            
+            // force is perpendicular to the vector from the center to the particle
+            let fx = -y * this.strength;
+            let fy = x * this.strength;
+            particle.fx += fx;
+            particle.fy += fy;
+
+            
+
+            let distance = Math.sqrt(x*x + y*y);
+            let fz = this.strength * 3 / distance;
+            particle.fz += fz;
+
+            // apply slight random force in x and y direction
+            let fx2 = (Math.random() - 0.5) * 10
+            let fy2 = (Math.random() - 0.5) * 10
+            particle.fx += fx2;
+            particle.fy += fy2;
+
+            // apply force towards the center
+            let fx3 = x * this.strength * -10 / (particle.z + 1);
+            let fy3 = y * this.strength * -10 / (particle.z + 1);
+            particle.fx += fx3;
+            particle.fy += fy3;
+
+        }
+    }
 }
 
 

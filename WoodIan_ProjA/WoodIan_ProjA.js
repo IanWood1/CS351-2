@@ -183,6 +183,8 @@ var g_tilt = 0;
 var g_up = [0,0,1];
 
 var linesBox;
+var date = new Date();
+var time = date.getTime();
 
 
 
@@ -207,7 +209,7 @@ function main() {
 	//
 	gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});
 	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl);
-	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 600, gl);
+	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 1000, gl);
 	s1 =  particles.getCurrentStateArray();
 	s2 =  particles2.getCurrentStateArray();
 	//
@@ -300,6 +302,11 @@ function animate(timeStep) {
   var now = Date.now();	
   var elapsed = now - g_last;
   g_last = now;
+
+ // log the frame-rate to the console as an integer:
+ console.log('frame-rate: '+Math.floor(1000/elapsed)+' fps.');
+
+
   // Return the amount of time passed.
   return elapsed;
 }

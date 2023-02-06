@@ -36,9 +36,9 @@ class ParticleSystem {
                 this.particalType = PARTICLE_TYPE.MULTI_BOUNCY;
         
                 for (let i = 0; i < this.numParticles; i++) {
-                    var x = Math.random() * 2 - 1;
-                    var y = Math.random() * 2 - 1;
                     var z = Math.random() * 2;
+                    var x = z* Math.random() * 0.4 - 0.2;
+                    var y = z*Math.random() * 0.4 - 0.2;
 
                     // random velocity
                     var vx = 0// Math.random() * 10 - 1;
@@ -55,7 +55,7 @@ class ParticleSystem {
                 this.gravity = new ForceGravity();
                 this.drag = new ForceDrag();
         
-                this.forceList = [this.gravity, this.drag, new FountainForce(0, 0, 3)];
+                this.forceList = [this.gravity, this.drag, new TornadoForce(0, 0, 5 )];
                 this.constraintList = [new BoxConstraint()];
                 break;
 
@@ -145,10 +145,10 @@ class ParticleSystem {
                 this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
                 this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([65/225, 43/225, 21/225, 1]));
                 this.s2 = this.s1.slice(0);
-                this.spring2 = new SelectiveSpringForce(1, 100, spacing * Math.sqrt(2), diaganolConnections);
-                this.spring = new SelectiveSpringForce(4000, 100, spacing, connections);
+                this.spring2 = new SelectiveSpringForce(100, 0.1, spacing * Math.sqrt(2), diaganolConnections);
+                this.spring = new SelectiveSpringForce(3000, 1, spacing, connections);
                 this.forceList = [ this.spring, this.spring2, new ForceDrag(), new ForceGravity()];
-                this.constraintList = [new AboveGroundConstraint(), new FixedPointsConstraint(this.s1, fixedPoints)];
+                this.constraintList = [new AboveGroundConstraint(), new FixedPointsConstraint(this.s1, fixedPoints),];
                 break;
 
 
@@ -271,7 +271,6 @@ class ParticleSystem {
                     this.s2[i].vy = p.vy + dp.vy * this.timeStep;
                     this.s2[i].vz = p.vz + dp.vz * this.timeStep;
                 }
-                console.log(this.s2[0])
                 break;
 
 
@@ -291,7 +290,7 @@ class ParticleSystem {
 
 
     step(){
-        this.solver(SOLVER_TYPE.MIDPOINT);
+        this.solver(SOLVER_TYPE.VELOCITY_VERLET);
         this.doConstraints();
 
         this.s1 = this.s2.slice(0);
