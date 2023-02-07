@@ -163,15 +163,12 @@ class FireVBO {
             varying vec3 v_Color;
             uniform int u_isBall; 
             void main() {
-            if(u_isBall > 0){ 
-                float dist = distance(gl_PointCoord, vec2(0.5, 0.5)); 
-                if(dist < 0.5) { 
-                        gl_FragColor = vec4((1.0-2.0*dist)*v_Color.rgb, 1.0);
-                    } 
-                    else { discard; }
-                } 
-            else { // NOT drawing a ball; just use vertex color.
-                gl_FragColor = vec4(v_Color.rgb, 1.0); 
+                float dist = distance(gl_PointCoord, vec2(0.5, 0.5));
+                if (dist < 0.5) {
+                    gl_FragColor = vec4(v_Color, 1.0);
+                    gl_FragColor.r *= 0.3;
+                } else {
+                    discard;
                 }
             }`;
 
@@ -213,12 +210,6 @@ class FireVBO {
             return;
         }
 
-        this.u_isBallLoc = gl.getUniformLocation(this.shaderLoc, 'u_isBall');
-        if(!this.u_isBallLoc) {
-            console.log('Failed to get u_isBallLoc variable location');
-            return;
-        }
-
         this.u_mvpMatLoc = gl.getUniformLocation(this.shaderLoc, 'u_mvpMat');
         if (!this.u_mvpMatLoc) {
             console.log(this.constructor.name + '.constructor() failed to get GPU location for u_mvpMat uniform');
@@ -257,7 +248,6 @@ class FireVBO {
         this.mvp_Mat.setIdentity();
         this.mvp_Mat.set(mvpMat);
         gl.uniformMatrix4fv(this.u_mvpMatLoc, false, this.mvp_Mat.elements);
-        gl.uniform1i(this.u_isBallLoc, true);		// keyboard callbacks set 'myRunMode'
 
     }
 
@@ -274,7 +264,8 @@ class FireVBO {
 
 
 class LinesVBO {
-    constructor(gl, particleArray, color) {
+    constructor(gl, particleArray, color, isScene) {
+        this.isScene = isScene;
         this.VSHADER_SOURCE =
         `precision mediump float;					// req'd in OpenGL ES if we use 'float'
         //
@@ -386,6 +377,14 @@ class LinesVBO {
             console.log('ERROR! before' + this.constructor.name + '.draw() call you needed to call this.switchToMe()!!');
         }
         gl.drawArrays(gl.LINES, 0, this.vboVerts);
+        if (this.isScene) {
+            pushMatrix(this.mvp_Mat);
+            this.mvp_Mat.translate(-7, 0, 0);
+            this.mvp_Mat.scale(1, 2,2);
+            gl.uniformMatrix4fv(this.u_mvpMatLoc, false, this.mvp_Mat.elements);
+            gl.drawArrays(gl.LINES, 0, 4*7);
+            this.mvp_Mat = popMatrix(this.mvp_Mat);
+        }
     }
 
 

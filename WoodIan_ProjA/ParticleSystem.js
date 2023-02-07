@@ -4,6 +4,7 @@ const PARTICLE_TYPE = {
     FULLY_CONNECTED_SPRING: 2,
     CLOTH: 3,
     FIRE: 4,
+    BOID: 5,
     // ...
 };
 
@@ -146,14 +147,16 @@ class ParticleSystem {
                     }
                 }
                 this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
-                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([100/225, 10/225, 10/225, 1]));
+                this.LinesBOX = new LinesVBO(gl, this.getClothLines(), new Float32Array([100/225, 10/225, 10/225, 1], false));
                 this.s2 = this.s1.slice(0);
-                this.spring2 = new SelectiveSpringForce(100, 10, spacing * Math.sqrt(2), diaganolConnections);
-                this.spring = new SelectiveSpringForce(1000, 10, spacing, connections);
+                this.spring2 = new SelectiveSpringForce(100, 1, spacing * Math.sqrt(2), diaganolConnections);
+                this.spring = new SelectiveSpringForce(1000, 1, spacing, connections);
                 this.forceList = [ this.spring, this.spring2, new ForceDrag(), new ForceGravity()];
                 this.constraintList = [new AboveGroundConstraint(), 
                     new FixedPointsConstraint(this.s1, fixedPoints),
-                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez)   
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
+                    new SelectivePairsConstraint(spacing*1.5, connections) ,
+                    new ExclusionCubeConstraint()
                 ];
                 break;
 
@@ -186,9 +189,38 @@ class ParticleSystem {
                 break;
 
 
+            case PARTICLE_TYPE.BOID:
+                this.particalType = PARTICLE_TYPE.BOID;
+                this.s1 = [];
+                this.s2 = [];
+
+                this.spawnX = -7;
+                this.spawnY = 0;
+
+                for (let i = 0; i < this.numParticles; i++) {
+                    let x = this.spawnX + Math.random() * 2 - 1;
+                    let y = this.spawnY + Math.random() * 2 - 1;
+                    let z = 0;
+                    let vxRand = Math.random() * 10 - 5;
+                    let vyRand = Math.random() * 10 - 5;
+                    let vzRand = Math.random() * 10 - 5;
+                    let p = new Particle(x, y, z, vxRand, vyRand, vzRand, 1);
+                    this.s1.push(p);
+                }
+                this.BOX = new ParticlesVBO(gl, this.getCurrentStateArray());
+                let boxConstraint = new BoxConstraint(-8, -6, -2, 2, 0, 4);
+                this.s2 = this.s1.slice(0);
+                this.constraintList = [new AboveGroundConstraint(),
+                    boxConstraint];
+                this.forceList = [new BoidsForce(1,1,1,1,0.2, boxConstraint),
+                    new ForceRandom(10,10,50),]
+                break;
+
+
+
 
             default:
-                throw new Error("Unknown particle type");
+                throw new Error("Unknown particle type:" + particleType);   
         }
 
     }

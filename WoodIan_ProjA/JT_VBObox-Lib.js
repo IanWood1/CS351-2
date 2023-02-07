@@ -262,6 +262,22 @@ g_modelMatrix = popMatrix(g_modelMatrix);
 matl0.setMatl(MATL_EMERALD)
 matl1.setMatl(MATL_BLU_PLASTIC)
 sendStructs(vbobox)
+
+pushMatrix(g_modelMatrix);
+  // draw cube
+  sendStructs(vbobox)
+  g_modelMatrix.translate(g_spherex, g_spherey, g_spherez);
+  g_modelMatrix.translate(6, 0, 0);
+  g_normalMatrix.setInverseOf(g_modelMatrix);
+  g_normalMatrix.transpose();
+  gl.uniformMatrix4fv(normalMatLoc, false, g_normalMatrix.elements);
+  gl.uniformMatrix4fv(mvpMatLoc, false, g_mvpMatrix.elements);
+  gl.uniformMatrix4fv(modelMatLoc, false, g_modelMatrix.elements);
+  gl.drawArrays(gl.TRIANGLES, sphereVerts + cubeVerts, cubeVertsBlue);
+
+g_modelMatrix = popMatrix(g_modelMatrix);
+
+
 pushMatrix(g_modelMatrix);
   g_modelMatrix.rotate(g_sphere_angle*5, 0, 1, 0);
   g_modelMatrix.translate(g_spherex, g_spherey, g_spherez);
@@ -272,6 +288,7 @@ pushMatrix(g_modelMatrix);
   gl.uniformMatrix4fv(mvpMatLoc, false, g_mvpMatrix.elements);
   gl.uniformMatrix4fv(modelMatLoc, false, g_modelMatrix.elements);
   gl.drawArrays(gl.TRIANGLES, sphereVerts+cubeVerts+cubeVertsBlue, highPolyVerts);
+
 
   matl0.setMatl(MATL_BLACK_RUBBER)
   matl1.setMatl(MATL_BLACK_RUBBER)

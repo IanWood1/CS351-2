@@ -4,9 +4,9 @@
 
 //
 g_numfloorverts = 0;
-g_spherex = 4;
-g_spherey = -0.2;
-g_spherez = 1;
+g_spherex = 4.5;
+g_spherey = -1;
+g_spherez = 2;
 g_spherer = 0.8;
 g_solverType = SOLVER_TYPE.MIDPOINT;
 
@@ -192,6 +192,7 @@ var g_num_cloth_particles = 400;
 var particles;
 var particles2;
 var fire;
+var boids;
 var s1;
 var s2;
 var linesVerts;
@@ -202,7 +203,7 @@ var myIsBall;
 
 //var g_EyeX = 0.0; var g_EyeY = 0.0; var g_EyeZ = 1.0;        // eye position
 //var g_LookX = 0.0; var g_LookY = 0.0; var g_LookZ = 0.0;
-var g_eye = [0, 20,2];
+var g_eye = [-2, 25,2];
 var g_theta = 3.14 + 3.14/2;
 var g_tilt = 0;
 var g_up = [0,0,1];
@@ -254,6 +255,7 @@ function main() {
 	particles = new ParticleSystem(PARTICLE_TYPE.CLOTH, g_num_cloth_particles, gl);
 	particles2 = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 1000, gl);
 	fire = new ParticleSystem(PARTICLE_TYPE.FIRE, 3000, gl);
+	boids = new ParticleSystem(PARTICLE_TYPE.BOID, 400, gl);
 	s1 =  particles.getCurrentStateArray();
 	s2 =  particles2.getCurrentStateArray();
 	SphereBox.init(gl);
@@ -371,6 +373,7 @@ function draw(gl, n, timeStep) {
 		particles.step();
 		particles2.step();
 		fire.step();
+		boids.step()
 	}
 
 
@@ -403,6 +406,7 @@ function draw(gl, n, timeStep) {
   particles.render(gl, mvpMat);
   particles2.render(gl, mvpMat);
   fire.render(gl, mvpMat);
+  boids.render(gl, mvpMat);
   linesBox.switchToMe(gl);
   linesBox.reload(gl, linesVerts, mvpMat);
   linesBox.draw(gl);
@@ -478,7 +482,6 @@ function initVertexBuffers(gl) {
 	-1.0, -1.0, 2.0, 1.0,	// 23
 	
 	]) // LOOP for the floor
-
 // Calculate the size of vertex array buffer
  var floorVerts = get_floor()
  var vertSize = boxVerts.length + floorVerts.length;
@@ -493,8 +496,8 @@ function initVertexBuffers(gl) {
  for(i = 0; i < floorVerts.length; i++){
 	linesVerts[i+boxVerts.length] = floorVerts[i];
 }
-
-linesBox = new LinesVBO(gl, linesVerts);
+let lineColor = new Float32Array([0.0, 0.5, 0.0, 1.0]);
+linesBox = new LinesVBO(gl, linesVerts, lineColor , true);
 
 
 }

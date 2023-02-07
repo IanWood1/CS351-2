@@ -33,6 +33,23 @@ class ForceDrag extends Force {
     }
 }
 
+class ForceRandom extends Force{
+    constructor(strengthX, strengthY, strengthZ) {
+        super();
+        this.strengthX = strengthX;
+        this.strengthY = strengthY;
+        this.strengthZ = strengthZ;
+    }
+
+    applyForce(particles) {
+        for (let particle of particles) {
+            particle.fx += Math.random() * this.strengthX - this.strengthX / 2;
+            particle.fy += Math.random() * this.strengthY - this.strengthY / 2;
+            particle.fz += Math.random() * this.strengthZ - this.strengthZ / 2;
+        }
+    }
+}
+
 
 class ForceFullyConnectedSpring extends Force {
     constructor(k, d, length) {
@@ -170,8 +187,8 @@ class TornadoForce extends Force {
             particle.fy += fy2;
 
             // apply force towards the center
-            let fx3 = x * this.strength * -10 / (particle.z + 1);
-            let fy3 = y * this.strength * -10 / (particle.z + 1);
+            let fx3 = x * this.strength * -15 / (particle.z + 1);
+            let fy3 = y * this.strength * -15 / (particle.z + 1);
             particle.fx += fx3;
             particle.fy += fy3;
 
@@ -217,6 +234,120 @@ class BlowingDirectionForce extends Force {
             particle.fx += this.x * effectiveStrength;
             particle.fy += this.y * effectiveStrength;
             particle.fz += this.z * effectiveStrength;
+        }
+    }
+}
+
+
+class BoidsForce extends Force {
+    constructor(seperation, alignment, cohesion, avoidance, radius, boxConstraint) {
+        super();
+        this.seperation = seperation;
+        this.alignment = alignment;
+        this.cohesion = cohesion;
+        this.radius = radius;
+        this.avoidance = avoidance;
+        this.boxConstraint = boxConstraint;
+    }
+
+    applyForce(particles) {
+        for (let particle of particles){
+            // find neighbours
+            let neighbours = [];
+            for (let otherParticle of particles) {
+                if (otherParticle != particle) {
+                    let x = particle.x - otherParticle.x;
+                    let y = particle.y - otherParticle.y;
+                    let z = particle.z - otherParticle.z;
+                    let distance = Math.sqrt(x*x + y*y + z*z);
+                    if (distance < this.radius) {
+                        neighbours.push(otherParticle);
+                    }
+                }
+            }
+
+            // apply allignment (adjust velocity to match neighbours)
+            let avgvx = 0;
+            let avgvy = 0;
+            let avgvz = 0;
+            for (let neighbour of neighbours) {
+                avgvx += neighbour.vx;
+                avgvy += neighbour.vy;
+                avgvz += neighbour.vz;
+            }
+            avgvx /= neighbours.length;
+            avgvy /= neighbours.length;
+            avgvz /= neighbours.length;
+            particle.vx += (avgvx - particle.vx) * this.alignment;
+            particle.vy += (avgvy - particle.vy) * this.alignment;
+            particle.vz += (avgvz - particle.vz) * this.alignment;
+
+
+            // apply cohesion (apply force towards the center of mass of neighbours)
+            let avgx = 0;
+            let avgy = 0;
+            let avgz = 0;
+            for (let neighbour of neighbours) {
+                avgx += neighbour.x;
+                avgy += neighbour.y;
+                avgz += neighbour.z;
+            }
+            avgx /= neighbours.length;
+            avgy /= neighbours.length;
+            avgz /= neighbours.length;
+            let x = avgx - particle.x;
+            let y = avgy - particle.y;
+            let z = avgz - particle.z;
+            let distance = Math.sqrt(x*x + y*y + z*z);
+            let fx = x * this.cohesion / distance;
+            let fy = y * this.cohesion / distance;
+            let fz = z * this.cohesion / distance;
+            particle.fx += fx;
+            particle.fy += fy;
+            particle.fz += fz;
+
+
+            // apply seperation (apply force away from neighbours)
+            for (let neighbour of neighbours) {
+                let x = particle.x - neighbour.x;
+                let y = particle.y - neighbour.y;
+                let z = particle.z - neighbour.z;
+                let distance = Math.sqrt(x*x + y*y + z*z);
+                let fx = x * this.seperation / distance;
+                let fy = y * this.seperation / distance;
+                let fz = z * this.seperation / distance;
+                particle.fx += fx;
+                particle.fy += fy;
+                particle.fz += fz;
+            }
+
+            // avoid box constraint note: boxConstraint.xWall1 is the right (-x) wall and boxConstraint.xWall2 is the left (+x) wall
+            let distToxWall1 = Math.abs(particle.x - this.boxConstraint.xWall1);
+            let radiusMultiplier = 2;
+            if(distToxWall1 < this.radius * radiusMultiplier){
+                particle.fx += this.avoidance;
+            } 
+            let distToxWall2 = Math.abs(particle.x - this.boxConstraint.xWall2);
+            if(distToxWall2 < this.radius* radiusMultiplier){
+                particle.fx -= this.avoidance;
+            }
+            let distToyWall1 = Math.abs(particle.y - this.boxConstraint.yWall1);
+            if(distToyWall1 < this.radius* radiusMultiplier){
+                particle.fy += this.avoidance;
+            }
+            let distToyWall2 = Math.abs(particle.y - this.boxConstraint.yWall2);
+            if(distToyWall2 < this.radius* radiusMultiplier){
+                particle.fy -= this.avoidance;
+            }
+            let distTozWall1 = Math.abs(particle.z - this.boxConstraint.zWall1);
+            if(distTozWall1 < this.radius* radiusMultiplier){
+                particle.fz += this.avoidance;
+            }
+            let distTozWall2 = Math.abs(particle.z - this.boxConstraint.zWall2);
+            if(distTozWall2 < this.radius* radiusMultiplier){
+
+                particle.fz -= this.avoidance;
+            }
         }
     }
 }
