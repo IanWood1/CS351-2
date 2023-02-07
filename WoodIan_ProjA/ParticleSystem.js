@@ -12,6 +12,7 @@ const SOLVER_TYPE = {
     EULER: "EULER",
     VELOCITY_VERLET: "VELOCITY_VERLET",
     MIDPOINT: "MIDPOINT",
+    ADAMS_BASHFORTH: "ADAMS_BASHFORTH",
 }
 
 var g_max_age;
@@ -60,7 +61,9 @@ class ParticleSystem {
                 this.drag = new ForceDrag();
         
                 this.forceList = [this.gravity, this.drag, new TornadoForce(0, 0, 5 )];
-                this.constraintList = [new BoxConstraint()];
+                this.constraintList = [new BoxConstraint(),
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
+                    new ExclusionCubeConstraint()];
                 break;
 
             case PARTICLE_TYPE.FULLY_CONNECTED_SPRING:
@@ -154,8 +157,8 @@ class ParticleSystem {
                 this.forceList = [ this.spring, this.spring2, new ForceDrag(), new ForceGravity()];
                 this.constraintList = [new AboveGroundConstraint(), 
                     new FixedPointsConstraint(this.s1, fixedPoints),
-                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
                     new SelectivePairsConstraint(spacing*1.5, connections) ,
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
                     new ExclusionCubeConstraint()
                 ];
                 break;
@@ -184,7 +187,10 @@ class ParticleSystem {
                 this.BOX = new FireVBO(gl, this.getCurrentStateArrayFire());
                 this.s2 = this.s1.slice(0);
                 g_max_age =40;
-                this.constraintList = [new AboveGroundConstraint(), new FireConstraint(this.spawnX, this.spawnY, 0, g_max_age, initialVelocity)];
+                this.constraintList = [new AboveGroundConstraint(), 
+                    new FireConstraint(this.spawnX, this.spawnY, 0, g_max_age, initialVelocity),
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
+                    new ExclusionCubeConstraint()];
                 this.forceList = [new ForceDrag(), new ForceGravity()];
                 break;
 
@@ -211,9 +217,12 @@ class ParticleSystem {
                 let boxConstraint = new BoxConstraint(-8, -6, -2, 2, 0, 4);
                 this.s2 = this.s1.slice(0);
                 this.constraintList = [new AboveGroundConstraint(),
-                    boxConstraint];
-                this.forceList = [new BoidsForce(1,1,1,1,0.2, boxConstraint),
-                    new ForceRandom(10,10,50),]
+                    boxConstraint,
+                    new SphereConstraint(g_spherer, g_spherex, g_spherey, g_spherez) ,
+                    new ExclusionCubeConstraint()];
+                this.forceList = [new BoidsForce(1,1,1,10,0.2, boxConstraint),
+                    new ForceRandom(10,10,50),
+                    new ForceDrag()];
                 break;
 
 
@@ -222,6 +231,7 @@ class ParticleSystem {
             default:
                 throw new Error("Unknown particle type:" + particleType);   
         }
+        this.s0 = this.s1.slice(0);
 
     }
 
@@ -340,11 +350,27 @@ class ParticleSystem {
                 }
                 break;
 
+            case SOLVER_TYPE.ADAMS_BASHFORTH:
+                this.applyForces(this.s1);
+                this.applyForces(this.s0);
+                var sdot0 = this.dotFinder(this.s0);
+                var sdot1 = this.dotFinder(this.s1);
+                for (let i = 0; i < this.numParticles; i++) {
+                    this.s2[i] = new Particle(
+                        this.s1[i].x  + this.timeStep * (1.5 * sdot1[i].x  - 0.5 * sdot0[i].x ),
+                        this.s1[i].y  + this.timeStep * (1.5 * sdot1[i].y  - 0.5 * sdot0[i].y ),
+                        this.s1[i].z  + this.timeStep * (1.5 * sdot1[i].z  - 0.5 * sdot0[i].z ),
+                        this.s1[i].vx + this.timeStep * (1.5 * sdot1[i].vx - 0.5 * sdot0[i].vx),
+                        this.s1[i].vy + this.timeStep * (1.5 * sdot1[i].vy - 0.5 * sdot0[i].vy),
+                        this.s1[i].vz + this.timeStep * (1.5 * sdot1[i].vz - 0.5 * sdot0[i].vz),
+                        this.s1[i].mass);
+                    this.s2[i].age = this.s1[i].age
+                }
+                break;
+
 
             default:
                 throw new Error("Unknown solver type: " + solverType);
-                break;
-
         }
     }
 
@@ -359,7 +385,7 @@ class ParticleSystem {
     step(){
         this.solver(g_solverType);
         this.doConstraints();
-
+        this.s0 = this.s1.slice(0);
         this.s1 = this.s2.slice(0);
     }
 

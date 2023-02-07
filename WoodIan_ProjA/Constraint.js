@@ -131,9 +131,9 @@ class SphereConstraint{
                 particle.vz = particle.vz - dot *2* toCenterz;
 
                 // apply friction
-                particle.vx *= 0.1;
-                particle.vy *= 0.1;
-                particle.vz *= 0.1;
+                particle.vx *= 0.9;
+                particle.vy *= 0.9;
+                particle.vz *= 0.9;
 
 
             }
