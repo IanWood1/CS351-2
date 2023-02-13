@@ -319,9 +319,12 @@ CCamera.prototype.raylookAt = function(eyePt, aimPt, upVec) {
 		//
 */
   // UNTESTED!!! MIGHT BE WRONG!!!
+  this.eyePt = eyePt;
+  this.aimPt = aimPt;
+  this.upVec = upVec;
   vec3.subtract(this.nAxis, eyePt, aimPt);  // aim-eye == MINUS N-axis direction
   vec3.normalize(this.nAxis, this.nAxis);   // N-axis must have unit length.
-  vec3.cross(this.uAxis, upVec, this.nAxis);  // U-axis == upVec cross N-axis
+  vec3.cross(this.uAxis, this.upVec, this.nAxis);  // U-axis == upVec cross N-axis
   vec3.normalize(this.uAxis, this.uAxis);   // make it unit-length.
   vec3.cross(this.vAxis, this.nAxis, this.uAxis); // V-axis == N-axis cross U-axis
 }
