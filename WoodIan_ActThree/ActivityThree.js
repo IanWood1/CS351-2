@@ -164,7 +164,7 @@ var xMclik=0.0;			// last mouse button-down position (in CVV coords)
 var yMclik=0.0;   
 var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var yMdragTot=0.0;  
-var particles = new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 30000);
+var particles = new ParticleSystem(PARTICLE_TYPE.FULLY_CONNECTED_SPRING, 2);
 var s1 =  particles.getCurrentStateArray();
 
 var mvpMat = new Matrix4();
@@ -323,67 +323,7 @@ function draw(gl, n, timeStep) {
 																					// update particle system state?
   if(myRunMode>1) {									// 0=reset; 1= pause; 2=step; 3=run
 		if(myRunMode==2) myRunMode=1;				// (if 2, do just one step and pause.)
-		//=YES!=========================================
-		// Make our 'bouncy-ball' move forward by one timestep:
-		// What happens when I rearrange the ordering of these steps? Why?
-		//	IT WORKS BEAUTIFULLY!
-		// -- apply acceleration due to gravity to current velocity:
-		zvelNow -= 0.01;
-		// -- apply drag: attenuate current velocity:
-		xvelNow *= 0.985;
-		yvelNow *= 0.985;
-		zvelNow *= 0.985;
-
-		// -- move our particle using current velocity:
-		xposNow += xvelNow;
-		yposNow += yvelNow; 
-		zposNow += zvelNow;
-		
-			// This looks OK, BUT*** 
-				// do you see what's wrong with it? we applied acceleration
-				// to current velocity ==> yields 'next' velocity (!).  Then
-				// we applied 'drag' to this 'next' velocity.  Then we applied
-				// 'next' velocity to 'current' position to find 'next' position.
-				//  But that's not what physics says we should do!
-				//	Recall that for timestep 'h',
-				//		nextVel = currentVel + h*acc
-				//		nextPos = currentPos + h*(currentVel + 0.5*h*acc)
-				// What happens if we do that instead?
-				// Uh Oh.  The ball never stops bouncing! WHY?!?!
-				//	SEE bouncyBall04.01BAD....
-		// -- 'bounce' our ball off the walls at (0,0), (1.8, 1.8):
-		if(      xposNow < -1 && xvelNow < 0.0
-		) {		// bounce on left wall.
-			xvelNow = -xvelNow;
-		}
-		else if (xposNow > 1 && xvelNow > 0.0
-		) {		// bounce on right wall
-			xvelNow = -xvelNow;
-		}
-		
-		if(      yposNow < -1 && yvelNow < 0.0
-		) {		// bounce on floor
-			yvelNow = -yvelNow;
-		}
-		else if( yposNow > 1 && yvelNow > 0.0
-		) {		// bounce on ceiling
-			yvelNow = -yvelNow;
-		}
-
-		if(      zposNow < 0 && zvelNow < 0.0)
-		{		// bounce on floor
-			zvelNow = -zvelNow;
-		}
-		else if( zposNow > 1 && zvelNow > 0.0)
-		{		// bounce on ceiling
-			zvelNow = -zvelNow;
-		}
-
-		// check z direction
-
-		//  -- hard limit on 'floor' keeps y position >= 0;
-		if(zposNow < 0) zposNow = 0;
-		//============================================
+		particles.step();
 	}
 
 	gl.uniform1i(u_runModeID, myRunMode);		// run/step/pause the particle system
@@ -415,7 +355,6 @@ function draw(gl, n, timeStep) {
   gl.uniform1i(u_isBallLoc, myIsBall);		// keyboard callbacks set 'myRunMode'
   // Draw our VBO's contents:
   // -----------------------
-  particles.step();
   particles.render(gl);
   
   // Set myIsBall to 0 to draw other primitives
@@ -768,18 +707,12 @@ function myKeyPress(ev) {
 			myRunMode = 3;
 			break;
 		case 'R':  // HARD reset: position AND velocity.
-		  myRunMode = 0;			// RESET!
-			xposNow =  0.0;				yposNow =  0.0;				zposNow =  1.0;	
-			xvelNow =  INIT_VEL;	yvelNow =  INIT_VEL;	zvelNow =  0.0;
-			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
+		  	particles.s1[0] =  new Particle(2.05, 0, 1, 0, 0, -0.1, 1);
+			particles.s1[1] =  new Particle(2.95, 0, 1, 0, 0, 0.1, 1);
 			break;
 		case 'r':		// 'SOFT' reset: boost velocity only.
-			// don't change myRunMode
-			var randomVel = Math.random() * 0.1;
-			if(xvelNow > 0.0) xvelNow += INIT_VEL + randomVel; else xvelNow -= INIT_VEL + randomVel;
-			if(yvelNow > 0.0) yvelNow += INIT_VEL+ randomVel; else yvelNow -= INIT_VEL + randomVel;
-			if(zvelNow > 0.0) zvelNow += INIT_VEL + randomVel; else zvelNow -= INIT_VEL + randomVel;
-			particles =  new ParticleSystem(PARTICLE_TYPE.MULTI_BOUNCY, 100);
+			particles.s1[0] =  new Particle(1.95, 0, 1, 0, 0, -0.1, 1);
+			particles.s1[1] =  new Particle(3.05, 0, 1, 0, 0,  0.1, 1);
 			break;	
 		case 'p':
 		case 'P':			// toggle pause/run:

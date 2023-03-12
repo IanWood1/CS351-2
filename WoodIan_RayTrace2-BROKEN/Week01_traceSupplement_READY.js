@@ -473,15 +473,18 @@ CGeom.prototype.traceGrid = function(inRay) {
 //            (y/ygap) has fractional part < linewidth), you hit a line on
 //            the grid. Use 'lineColor.
 //        otherwise, the ray hit BETWEEN the lines; use 'gapColor'
+  var rayT = new CRay(); 
+  vec4.transformMat4(rayT.orig, inRay.orig, this.world2model);
+  vec4.transformMat4(rayT.dir,  inRay.dir,  this.world2model);
 
-  var t0 = (this.zGrid -inRay.orig[2])/inRay.dir[2];    
+  var t0 = (this.zGrid -rayT.orig[2])/rayT.dir[2];    
           // find ray/grid-plane intersection: t0 == value where ray hits plane.
   if(t0 < 0) {
     return -1;      // ray hits the plane somewhere BEHIND the camera eyepoint!!
   }
-  // compute the x,y,z point where inRay hit the grid-plane
-  var hitPt = vec4.fromValues(inRay.orig[0] + inRay.dir[0]*t0,
-                              inRay.orig[1] + inRay.dir[1]*t0,
+  // compute the x,y,z point where rayT hit the grid-plane
+  var hitPt = vec4.fromValues(rayT.orig[0] + rayT.dir[0]*t0,
+                              rayT.orig[1] + rayT.dir[1]*t0,
                               this.zGrid, 1.0);
   // remember, hit-point x,y could be positive or negative:
   var loc = hitPt[0] / this.xgap; // how many 'xgaps' from the origin?
@@ -496,6 +499,28 @@ CGeom.prototype.traceGrid = function(inRay) {
       return 1;       // yes.
   }
   return 0;         // No.
+}
+
+CGeom.prototype.rayLoadIdentity = function() {
+	this.world2model = mat4.create();
+}
+
+CGeom.prototype.rayTranslate = function(x,y,z) {
+	var tmp = mat4.create();
+	mat4.translate(tmp, this.world2model, vec3.fromValues(x,y,z));
+	this.world2model = tmp;
+}
+
+CGeom.prototype.rayRotate = function(angle, x,y,z) {
+	var tmp = mat4.create();
+	mat4.rotate(tmp, this.world2model, angle, vec3.fromValues(x,y,z));
+	this.world2model = tmp;
+}
+
+CGeom.prototype.rayScale = function(x,y,z) {
+	var tmp = mat4.create();
+	mat4.scale(tmp, this.world2model, vec3.fromValues(x,y,z));
+	this.world2model = tmp;
 }
 
 function CImgBuf(wide, tall) {
@@ -649,7 +674,9 @@ CImgBuf.prototype.makeRayTracedImage = function() {
   var myCam = new CCamera();	// the 3D camera that sets eyeRay values
   var myGrid = new CGeom(JT_GNDPLANE);
   var colr = vec4.create();	// floating-point RGBA color value
-
+  myCam.rayFrustum(-1.0, 1.0,    // left, right
+  				   -1.0, 1.0,    // bottom, top
+  					1.0, 100.0);   // near, far
   myCam.raylookAt(gui.camEyePt, gui.camAimPt, gui.camUpVec);
 /*
 // DIAGNOSTIC:
@@ -661,27 +688,42 @@ console.log("colr obj:", colr);
   var i,j;      // pixel x,y coordinate (origin at lower left; integer values)
   for(j=0; j< this.ySiz; j++) {       // for the j-th row of pixels.
   	for(i=0; i< this.xSiz; i++) {	    // and the i-th pixel on that row,
-			myCam.setEyeRay(eyeRay,i,j);						  // create ray for pixel (i,j)
+		var totalColor = vec4.create();
+		for (var k = 0; k < g_AAcode; k++) {
+			for (var l = 0; l < g_AAcode; l++){
+				// sub-pixel anti-aliasing
+				var new_i = i + (0.5 / g_AAcode) + ((Math.random() - 0.5) * g_isJitter)  + k;
+				var new_j = j + (0.5 / g_AAcode) + ((Math.random() - 0.5) * g_isJitter) + l;
 
-/*
-// DIAGNOSTIC:  (print value for pixel (i,j) only:
-if(i==0 && j==0) console.log('eyeRay:', eyeRay);
-// END DIAGNOSTIC.
-*/
-			hit = myGrid.traceGrid(eyeRay);						// trace ray to the grid
-			if(hit==0) {
-				vec4.copy(colr, myGrid.gapColor);
+				myCam.setEyeRay(eyeRay,new_i,new_j);						  // create ray for pixel (i,j)
+
+			/*
+			// DIAGNOSTIC:  (print value for pixel (i,j) only:
+			if(i==0 && j==0) console.log('eyeRay:', eyeRay);
+			// END DIAGNOSTIC.
+			*/
+				hit = myGrid.traceGrid(eyeRay);						// trace ray to the grid
+				if(hit==0) {
+					vec4.copy(colr, myGrid.gapColor);
+				}
+				else if (hit==1) {
+					vec4.copy(colr, myGrid.lineColor);
+				}
+				else {
+					vec4.copy(colr, myGrid.skyColor);
+				}
+				totalColor[0] += colr[0];
+				totalColor[1] += colr[1];
+				totalColor[2] += colr[2];
 			}
-			else if (hit==1) {
-				vec4.copy(colr, myGrid.lineColor);
-			}
-			else {
-			  vec4.copy(colr, myGrid.skyColor);
-			}
-		  idx = (j*this.xSiz + i)*this.pixSiz;	// Array index at pixel (i,j) 
-	  	this.fBuf[idx   ] = colr[0];	
-	  	this.fBuf[idx +1] = colr[1];
-	  	this.fBuf[idx +2] = colr[2];
+		}
+		idx = (j*this.xSiz + i)*this.pixSiz;	// Array index at pixel (i,j) 
+		totalColor[0] /= g_AAcode ** 2;
+		totalColor[1] /= g_AAcode ** 2;
+		totalColor[2] /= g_AAcode ** 2;
+		this.fBuf[idx   ] = totalColor[0];	
+		this.fBuf[idx +1] = totalColor[1];
+		this.fBuf[idx +2] = totalColor[2];
 	  	}
   	}
   this.float2int();		// create integer image from floating-point buffer.
