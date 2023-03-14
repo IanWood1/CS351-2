@@ -32,24 +32,24 @@
 	    W/S; A/D keys: move camera forward/backwards; strafe left/right.
 	<br>
 <hr> <!-- Draw a horizontal-line separator------------------------------------------------------------->
-	Open Console, please: (right-click-->'Inspect Element'-->'Console' tab)
+	<input type="button" value="x++" onclick="incX()" />
+	<input type="button" value="x--" onclick="decX()" />
 	<br>
-	Try keyboard & mouse click/drag inside the canvas, and:
-		<br>
-		<!-- myKeyPress() modifies this span object: -->
-		<span id='KeyPressResult' > KeyPress: </span> 
-		<br>
-		<!-- myKeyDown() modifies this span object: -->
-		<span id='KeyDownResult'  > KeyDown : </span> 	
-		<br>
-		<!-- myMouseMove() modifies this span object: -->
-		<span id='MouseAtResult'> Mouse At:   </span> 
-		<br>
-		<!-- myMouseUp() modifies this span object: -->
-		<span id='MouseDragResult'> Mouse Drag: </span> 
-
-
-	<!--	Load in the JavaScript libraries supplied by our textbook 
+	<input type="button" value="y++" onclick="incY()" />
+	<input type="button" value="y--" onclick="decY()" />
+	<br>
+	<input type="button" value="z++" onclick="incZ()" />
+	<input type="button" value="z--" onclick="decZ()" />
+	<br>
+	<input type="button" value="Toggle Light 1" onclick="toggleLight1()" />
+	<input type="button" value="Toggle Light 2" onclick="toggleLight2()" />
+	<br>
+	<input type="button" value="recursion++" onclick="incRecursion()" />
+	<input type="button" value="recursion--" onclick="decRecursion()" />
+	<b>Recursion Depth: </b> 
+	<span id='RecursionReport'> 1 </span>
+	<br>
+<!--	Load in the JavaScript libraries supplied by our textbook 
 			(Matsuda et al., 2013 WebGL Programming Guide) that help us
 			with WebGL programming:
 	-->
@@ -63,12 +63,12 @@
     <script src="lib/glMatrix.js"></script> 
 
 		<!-- finally, our own code: -->
-		<script src="JT_GUIbox-Lib.js"    ></script>
-		<script src="JT_tracer1-Camera.js"></script>
-		<script src="JT_tracer2-Geom.js"  ></script>
-		<script src="JT_tracer3-ImgBuf.js"></script>
-		<script src="JT_tracer0-Scene.js" ></script>
-		<script src="JT_VBObox-Lib.js"    ></script>
-    <script src="Week02_MAIN.js"    ></script>
+		<script src="GUIbox.js"    ></script>
+		<script src="Camera.js"></script>
+		<script src="Geom.js"  ></script>
+		<script src="ImgBuf.js"></script>
+		<script src="Scene.js" ></script>
+		<script src="VBObox.js"    ></script>
+    <script src="main.js"    ></script>
   </body>
 </html>
